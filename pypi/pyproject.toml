@@ -1,0 +1,27 @@
+# Defensive placeholder: locks the "awaro" name on PyPI (brand protection).
+# This package intentionally ships nothing — the Awaro gateway is a hardware
+# product, see https://awaro.fr.
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "awaro"
+version = "0.0.1"
+description = "Name reserved for the Awaro LoRaWAN gateway (awaro.fr). See the lorawan2mqtt project for the software."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.9"
+maintainers = [{ name = "Awaro" }]
+classifiers = [
+    "Development Status :: 1 - Planning",
+    "License :: OSI Approved :: MIT License",
+]
+
+[project.urls]
+Homepage = "https://awaro.fr"
+Repository = "https://github.com/Di-Ny/awaro"
+"Software (lorawan2mqtt)" = "https://github.com/lorawan2mqtt/lorawan2mqtt"
+
+[tool.setuptools.packages.find]
+where = ["src"]
