@@ -1,14 +1,11 @@
-"""Companion command for the Awaro LoRaWAN gateway — https://awaro.fr.
+"""Companion CLI of the Awaro LoRaWAN gateway — https://awaro.fr.
 
-`awaro --port <serial> --mqtt-host <broker>` plugs an Awaro gateway into
-MQTT / Home Assistant over USB ("dongle" mode). The implementation lives in
-the open-source lorawan2mqtt project, installed as a dependency:
-https://github.com/lorawan2mqtt/lorawan2mqtt.
+`awaro find` discovers gateways, `awaro status <host>` reports their health,
+`awaro log --port ...` shows live decoded frames, `awaro bridge --port ...`
+turns the gateway into a USB dongle for MQTT / Home Assistant (implementation
+in the open-source lorawan2mqtt project, installed as a dependency).
 """
 
-__version__ = "0.0.2"
+__version__ = "0.0.3"
 
-
-def main():
-    from lorawan2mqtt.usb_bridge import main as bridge_main
-    bridge_main()
+from .cli import main  # noqa: F401  (console-script entry point)

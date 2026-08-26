@@ -7,8 +7,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "awaro"
-version = "0.0.2"
-description = "Companion command for the Awaro LoRaWAN gateway (awaro.fr): USB gateway to MQTT / Home Assistant, via lorawan2mqtt."
+version = "0.0.3"
+description = "Companion CLI of the Awaro LoRaWAN gateway (awaro.fr): discover gateways, health status, live decoded frames, USB-to-MQTT/Home Assistant bridge."
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.9"
@@ -25,7 +25,7 @@ dependencies = [
 ]
 
 [project.scripts]
-awaro = "awaro:main"
+awaro = "awaro.cli:main"
 
 [project.urls]
 Homepage = "https://awaro.fr"
