@@ -205,10 +205,46 @@ def _lns_overview(host, auth):
             print("    %-14s %-6s %s (%s)" % (h.get("name"), h.get("type"),
                                               h.get("url"), h.get("smsg")))
     codecs = [c.get("model") for c in d.get("codecs") or []]
-    print("  decode tables: %s   built-ins: %d"
+    print("  decode tables: %s   built-ins: %d (list: awaro lns %s decoders)"
           % (", ".join(codecs) if codecs else "none",
-             len(d.get("builtins") or [])))
+             len(d.get("builtins") or []), host))
     return d
+
+
+# Brand-wide engines shipped in the firmware; everything else in `builtins`
+# is a per-model decoder. Unknown future names simply fall in the model list.
+ENGINES = ("cayenne", "Milesight", "Elsys", "SenseCAP", "Browan", "Vicki",
+           "FurgoNode")
+
+
+def _columns(items, per_row=5, indent="    "):
+    w = max(len(x) for x in items) + 2 if items else 0
+    for i in range(0, len(items), per_row):
+        print(indent + "".join(x.ljust(w) for x in items[i:i + per_row]).rstrip())
+
+
+def _lns_decoders(host, auth):
+    d = _request(host, "/lns/api", auth=auth)
+    builtins = d.get("builtins") or []
+    engines = [b for b in builtins if b in ENGINES]
+    models = sorted(b for b in builtins if b not in ENGINES)
+    print("Decoders on %s — %d built-in + %d custom table(s)"
+          % (host, len(builtins), len(d.get("codecs") or [])))
+    if engines:
+        print("  brand engines (cover a whole range each):")
+        _columns(engines)
+    if models:
+        print("  per-model decoders:")
+        _columns(models)
+    tables = d.get("codecs") or []
+    if tables:
+        print("  custom decode tables (yours):")
+        for c in tables:
+            print("    %-16s %s" % (c.get("model"), c.get("spec", "")))
+    else:
+        print("  custom decode tables: none — build one on http://%s/lns "
+              "(Decoders tab), or request a decoder:" % host)
+        print("    https://github.com/lorawan2mqtt/lorawan2mqtt/issues/new?template=decoder-request.yml")
 
 
 def cmd_lns(args):
@@ -217,7 +253,9 @@ def cmd_lns(args):
         _lns_overview(host, args.auth)
         return
     op = rest[0]
-    if op == "adr" and len(rest) == 2 and rest[1] in ("on", "off"):
+    if op == "decoders":
+        _lns_decoders(host, args.auth)
+    elif op == "adr" and len(rest) == 2 and rest[1] in ("on", "off"):
         state = _request(host, "/lns/api", auth=args.auth)
         if "adr" not in state:
             sys.exit("this firmware does not expose the ADR engine toggle "
@@ -270,7 +308,7 @@ def cmd_lns(args):
         d = _request(host, "/lns/api?action=usb&v=" + rest[1], auth=args.auth)
         print("USB stream: %s" % ("on" if d.get("usb") else "off"))
     else:
-        sys.exit("usage: awaro lns <host> [adr on|off] [adr <device> <sf7-11>]\n"
+        sys.exit("usage: awaro lns <host> [decoders] [adr on|off] [adr <device> <sf7-11>]\n"
                  "                        [test <decoder> <hexpayload>]\n"
                  "                        [downlink <device> <hexpayload> "
                  "[--fport N] [--confirmed]]\n"
