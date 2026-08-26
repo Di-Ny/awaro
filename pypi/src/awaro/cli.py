@@ -3,21 +3,52 @@
 Subcommands:
     awaro find                     discover gateways (LAN sweep + USB ports)
     awaro status <host>            readable health report of one gateway
+    awaro backup <host>            save the gateway configuration to a file
+    awaro restore <host> <file>    push a backup file back to a gateway
+    awaro update <host>            check/install firmware updates
     awaro log --port <serial>      live decoded frames in the terminal
     awaro bridge --port <serial>   USB -> MQTT + Home Assistant discovery
                                    (implementation: lorawan2mqtt.usb_bridge)
 
+Gateways with a web password: add  -a user:password  to the network commands.
 `awaro --port ...` without a subcommand keeps the 0.0.2 behaviour (bridge).
 """
 import argparse
+import base64
 import concurrent.futures
 import datetime
 import json
 import socket
 import sys
+import time
+import urllib.error
 import urllib.request
 
 PREFIX = "@LNS "
+
+
+def _request(host, path, auth=None, data=None, timeout=8):
+    """GET (or POST when data is not None) http://host/path, JSON-decoded when
+    possible. Raises SystemExit with a readable message on common failures."""
+    req = urllib.request.Request("http://%s%s" % (host, path), data=data,
+                                 method="POST" if data is not None else "GET")
+    if auth:
+        req.add_header("Authorization", "Basic " +
+                       base64.b64encode(auth.encode()).decode())
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            body = r.read()
+    except urllib.error.HTTPError as e:
+        if e.code == 401:
+            sys.exit("the gateway asks for its web password: retry with "
+                     "-a user:password")
+        sys.exit("HTTP %d on %s" % (e.code, path))
+    except Exception as e:
+        sys.exit("gateway unreachable at %s (%s)" % (host, e))
+    try:
+        return json.loads(body)
+    except ValueError:
+        return body
 
 
 # ---------------------------------------------------------------- find ----
@@ -78,15 +109,7 @@ def cmd_find(args):
 # -------------------------------------------------------------- status ----
 
 def cmd_status(args):
-    url = "http://%s/status" % args.host
-    try:
-        with urllib.request.urlopen(url, timeout=5) as r:
-            d = json.load(r)
-    except urllib.error.HTTPError as e:
-        sys.exit("HTTP %d on %s (web password set? open %s in a browser)"
-                 % (e.code, url, "http://%s/" % args.host))
-    except Exception as e:
-        sys.exit("gateway unreachable at %s (%s)" % (url, e))
+    d = _request(args.host, "/status", auth=args.auth)
     s, lns, net, ns = (d.get(k, {}) for k in ("sys", "lns", "net", "ns"))
     up = s.get("uptime") or 0
     print("Awaro gateway @ %s" % args.host)
@@ -156,6 +179,115 @@ def cmd_log(args):
         s.close()
 
 
+# ------------------------------------------------------ backup/restore ----
+
+def cmd_backup(args):
+    cfg = _request(args.host, "/export" + ("?secrets=1" if args.secrets else ""),
+                   auth=args.auth)
+    lns = _request(args.host, "/lns/export", auth=args.auth)
+    out = args.out or "awaro-backup-%s-%s.json" % (
+        args.host.replace(".", "-"),
+        datetime.date.today().isoformat())
+    doc = {
+        "backup": {"tool": "awaro", "date": datetime.datetime.now().isoformat(timespec="seconds"),
+                   "source": args.host, "config_secrets": bool(args.secrets)},
+        "config": cfg,
+        "lns": lns,
+    }
+    with open(out, "w", encoding="utf-8") as f:
+        json.dump(doc, f, ensure_ascii=False, indent=2)
+    n_dev = len((lns or {}).get("devices") or [])
+    n_hook = len((lns or {}).get("hooks") or [])
+    print("Saved %s" % out)
+    print("  config : %d field(s)%s" % (len(cfg or {}),
+          " incl. secrets (WiFi password, tokens)" if args.secrets else
+          " (no WiFi password/token: add --secrets for a full restore file)"))
+    print("  LoRaWAN: %d sensor(s), %d integration(s), %d decode table(s)"
+          % (n_dev, n_hook, len((lns or {}).get("codecs") or [])))
+    print("  ⚠ this file contains the sensors' LoRaWAN keys — store it safely.")
+
+
+def cmd_restore(args):
+    with open(args.file, "r", encoding="utf-8") as f:
+        doc = json.load(f)
+    cfg, lns = doc.get("config"), doc.get("lns")
+    # Also accept a raw /export or /lns/export file saved from the web page.
+    if cfg is None and lns is None:
+        if "devices" in doc or "hooks" in doc:
+            lns = doc
+        elif "wifi_ssid" in doc or "ns_host" in doc:
+            cfg = doc
+        else:
+            sys.exit("unrecognized file (expected an `awaro backup` file or a "
+                     "gwconfig.json / lns export)")
+    if lns is not None and not args.config_only:
+        r = _request(args.host, "/lns/import", auth=args.auth,
+                     data=json.dumps(lns).encode(), timeout=20)
+        print("LoRaWAN restore:", r if isinstance(r, dict) else "sent")
+    if cfg is not None and not args.lns_only:
+        r = _request(args.host, "/import", auth=args.auth,
+                     data=json.dumps(cfg).encode(), timeout=20)
+        print("Config restore :", r if isinstance(r, dict) else "sent")
+        print("  (the gateway may reboot to apply the configuration)")
+
+
+# -------------------------------------------------------------- update ----
+
+def cmd_update(args):
+    if args.unblock:
+        _request(args.host, "/fw?action=unblock", auth=args.auth)
+        print("anti-brick lock released.")
+    before = _request(args.host, "/fw", auth=args.auth)
+    _request(args.host, "/fw?action=check", auth=args.auth)
+    fw = before
+    for _ in range(15):          # the check is asynchronous since 3.4.0
+        time.sleep(2)
+        fw = _request(args.host, "/fw", auth=args.auth)
+        if fw.get("checked") and fw.get("checked") != before.get("checked"):
+            break
+    print("Gateway %s — firmware %s (hardware %s)"
+          % (args.host, fw.get("cur"), fw.get("hw")))
+    print("  channel  : %s" % fw.get("url"))
+    print("  published: %s" % (", ".join(fw.get("list") or []) or "?"))
+    if fw.get("err"):
+        print("  check error: %s" % fw["err"])
+    avail = fw.get("avail") or ""
+    print("  -> %s" % ("update available: %s" % avail if avail else "up to date."))
+
+    if not args.install:
+        if avail:
+            print("     install it with: awaro update %s --install %s"
+                  % (args.host, avail))
+        return
+    target = avail if args.install == "latest" else args.install
+    if not target:
+        print("nothing to install."); return
+    r = _request(args.host, "/fw?action=install&v=" + target, auth=args.auth,
+                 timeout=15)
+    if not (isinstance(r, dict) and r.get("ok")):
+        err = (r or {}).get("err") if isinstance(r, dict) else r
+        sys.exit("install refused: %s%s" % (err,
+                 "  (try: awaro update %s --unblock)" % args.host
+                 if "bloqu" in str(err) else ""))
+    print("installing %s: the gateway reboots, downloads and installs "
+          "(1-3 min)..." % target)
+    deadline = time.time() + 300
+    while time.time() < deadline:
+        time.sleep(10)
+        try:
+            req = urllib.request.Request("http://%s/status" % args.host)
+            with urllib.request.urlopen(req, timeout=4) as rr:
+                cur = (json.load(rr).get("sys") or {}).get("fw")
+            if cur == target:
+                print("done: gateway is running %s." % cur)
+                return
+            print("  ... still on %s" % cur)
+        except Exception:
+            print("  ... rebooting")
+    sys.exit("timeout: check the gateway page (anti-brick lock? see "
+             "'awaro update %s')" % args.host)
+
+
 # -------------------------------------------------------------- bridge ----
 
 def cmd_bridge(argv):
@@ -177,11 +309,36 @@ def main():
     ap = argparse.ArgumentParser(
         prog="awaro", description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
+    net_parent = argparse.ArgumentParser(add_help=False)
+    net_parent.add_argument("-a", "--auth", metavar="USER:PASS",
+                            help="web password of the gateway, if one is set")
     sub = ap.add_subparsers(dest="cmd")
     p = sub.add_parser("find", help="discover gateways (LAN + USB)")
     p.add_argument("--net", help="network prefix to scan (default: local /24)")
-    p = sub.add_parser("status", help="health report of one gateway")
+    p = sub.add_parser("status", parents=[net_parent],
+                       help="health report of one gateway")
     p.add_argument("host", help="IP or hostname (e.g. 192.168.1.68 or awaro-xxxx.local)")
+    p = sub.add_parser("backup", parents=[net_parent],
+                       help="save the gateway configuration to a JSON file")
+    p.add_argument("host")
+    p.add_argument("-o", "--out", help="output file (default: awaro-backup-<host>-<date>.json)")
+    p.add_argument("--secrets", action="store_true",
+                   help="also include WiFi password and tokens in the config part")
+    p = sub.add_parser("restore", parents=[net_parent],
+                       help="push a backup file back to a gateway")
+    p.add_argument("host")
+    p.add_argument("file")
+    p.add_argument("--lns-only", action="store_true",
+                   help="restore only sensors/integrations/decode tables")
+    p.add_argument("--config-only", action="store_true",
+                   help="restore only the WiFi/NS configuration")
+    p = sub.add_parser("update", parents=[net_parent],
+                       help="check/install firmware updates")
+    p.add_argument("host")
+    p.add_argument("--install", metavar="VERSION",
+                   help="install this version ('latest' = newest published)")
+    p.add_argument("--unblock", action="store_true",
+                   help="release the anti-brick lock first")
     p = sub.add_parser("log", help="live decoded frames from the USB port")
     p.add_argument("--port", required=True)
     p.add_argument("--baud", type=int, default=115200)
@@ -189,12 +346,10 @@ def main():
                    help="also show non-event serial lines")
     sub.add_parser("bridge", help="USB -> MQTT + HA discovery (see --help)")
     args = ap.parse_args(argv)
-    if args.cmd == "find":
-        return cmd_find(args)
-    if args.cmd == "status":
-        return cmd_status(args)
-    if args.cmd == "log":
-        return cmd_log(args)
+    dispatch = {"find": cmd_find, "status": cmd_status, "backup": cmd_backup,
+                "restore": cmd_restore, "update": cmd_update, "log": cmd_log}
+    if args.cmd in dispatch:
+        return dispatch[args.cmd](args)
     ap.print_help()
 
 

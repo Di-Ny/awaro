@@ -8,6 +8,9 @@ pip install awaro
 
 awaro find                      # discover gateways (LAN sweep + USB ports)
 awaro status 192.168.1.68       # readable health report of one gateway
+awaro backup 192.168.1.68       # save sensors/integrations/config to a file
+awaro restore 192.168.1.68 f.json   # push a backup back (new or replaced box)
+awaro update 192.168.1.68 --install latest   # firmware check + install
 awaro log --port /dev/ttyUSB0   # live decoded sensor frames in the terminal
 awaro bridge --port /dev/ttyUSB0 --mqtt-host 127.0.0.1
                                 # USB "dongle" mode: MQTT + HA discovery

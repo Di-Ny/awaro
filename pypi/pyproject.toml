@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "awaro"
-version = "0.0.3"
+version = "0.1.0"
 description = "Companion CLI of the Awaro LoRaWAN gateway (awaro.fr): discover gateways, health status, live decoded frames, USB-to-MQTT/Home Assistant bridge."
 readme = "README.md"
 license = { text = "MIT" }
