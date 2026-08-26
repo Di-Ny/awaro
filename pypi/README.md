@@ -11,6 +11,11 @@ awaro status 192.168.1.68       # readable health report of one gateway
 awaro backup 192.168.1.68       # save sensors/integrations/config to a file
 awaro restore 192.168.1.68 f.json   # push a backup back (new or replaced box)
 awaro update 192.168.1.68 --install latest   # firmware check + install
+awaro lns 192.168.1.68          # LoRaWAN server overview (sensors, integrations)
+awaro lns 192.168.1.68 adr off               # ADR engine kill-switch (fw 3.4.1+)
+awaro lns 192.168.1.68 adr FGLR_02 9         # manual ADR: target SF for one sensor
+awaro lns 192.168.1.68 test Milesight 01756403673401046865   # codec dry-run
+awaro lns 192.168.1.68 downlink vanne01 03FF --fport 5       # queue a downlink
 awaro log --port /dev/ttyUSB0   # live decoded sensor frames in the terminal
 awaro bridge --port /dev/ttyUSB0 --mqtt-host 127.0.0.1
                                 # USB "dongle" mode: MQTT + HA discovery

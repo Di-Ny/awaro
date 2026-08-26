@@ -22,6 +22,7 @@ import socket
 import sys
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 
 PREFIX = "@LNS "
@@ -177,6 +178,103 @@ def cmd_log(args):
         print("\nbye.")
     finally:
         s.close()
+
+
+# ----------------------------------------------------------------- lns ----
+
+def _lns_overview(host, auth):
+    d = _request(host, "/lns/api", auth=auth)
+    print("LoRaWAN server @ %s — %s mode" % (host,
+          "local" if d.get("mode") == "local" else "forward"))
+    if "adr" in d:
+        print("  ADR engine : %s" % ("on" if d.get("adr") else "OFF"))
+    print("  USB stream : %s   supervision relay : %s"
+          % ("on" if d.get("usb") else "off",
+             "on" if d.get("relay") else "off"))
+    devs = d.get("devices") or []
+    print("  sensors (%d):" % len(devs))
+    for x in devs:
+        print("    %-12s %s  grp %s  %-10s cls %s  fcnt %-6s %s"
+              % (x.get("name") or "-", x.get("id"),
+                 chr(64 + (x.get("group") or 1)), x.get("decoder") or "-",
+                 x.get("cls"), x.get("fcnt"), x.get("status")))
+    hooks = d.get("hooks") or []
+    if hooks:
+        print("  integrations (%d):" % len(hooks))
+        for h in hooks:
+            print("    %-14s %-6s %s (%s)" % (h.get("name"), h.get("type"),
+                                              h.get("url"), h.get("smsg")))
+    codecs = [c.get("model") for c in d.get("codecs") or []]
+    print("  decode tables: %s   built-ins: %d"
+          % (", ".join(codecs) if codecs else "none",
+             len(d.get("builtins") or [])))
+    return d
+
+
+def cmd_lns(args):
+    host, rest = args.host, args.args
+    if not rest:
+        _lns_overview(host, args.auth)
+        return
+    op = rest[0]
+    if op == "adr" and len(rest) == 2 and rest[1] in ("on", "off"):
+        state = _request(host, "/lns/api", auth=args.auth)
+        if "adr" not in state:
+            sys.exit("this firmware does not expose the ADR engine toggle "
+                     "(needs >= 3.4.1); serial console fallback: `lns adr`")
+        d = _request(host, "/lns/api?action=adr_engine&v=" + rest[1],
+                     auth=args.auth)
+        print("ADR engine: %s  (not persisted — back to on at reboot)"
+              % ("on" if d.get("adr") else "OFF"))
+    elif op == "adr" and len(rest) == 3:
+        dev, sf = rest[1], rest[2]
+        if not sf.isdigit() or not 7 <= int(sf) <= 11:
+            sys.exit("SF must be 7..11 (SF12 = slowest rate, pointless target)")
+        if len(dev) not in (8, 16):
+            # the adr action only takes a DevAddr/DevEUI: resolve sensor names
+            state = _request(host, "/lns/api", auth=args.auth)
+            match = [x for x in state.get("devices") or []
+                     if x.get("name") == dev]
+            if not match:
+                sys.exit("unknown sensor %r (see: awaro lns %s)" % (dev, host))
+            dev = match[0].get("id")
+        _request(host, "/lns/api?action=adr&id=%s&sf=%s"
+                 % (urllib.parse.quote(dev), sf), auth=args.auth)
+        print("ADR command queued for %s -> SF%s (sent at its next uplinks, "
+              "up to 4 tries)" % (dev, sf))
+    elif op == "test" and len(rest) >= 3:
+        dec, payload = rest[1], rest[2]
+        d = _request(host, "/lns/api?action=codec_test&model=%s&data=%s&fport=%s"
+                     % (urllib.parse.quote(dec), payload, args.fport),
+                     auth=args.auth)
+        t = d.get("test") or {}
+        if t.get("err"):
+            sys.exit("decode error: %s" % t["err"])
+        fields = t.get("fields") or {}
+        if not fields:
+            print("no field decoded (wrong decoder for this payload?)")
+        for k, fv in fields.items():
+            print("  %-16s = %s %s" % (k, fv.get("v"), fv.get("u") or ""))
+    elif op == "downlink" and len(rest) >= 3:
+        dev, payload = rest[1], rest[2]
+        d = _request(host, "/lns/api?action=downlink&id=%s&fport=%d&data=%s&conf=%d"
+                     % (urllib.parse.quote(dev), args.fport, payload,
+                        1 if args.confirmed else 0), auth=args.auth)
+        rc = d.get("dlrc")
+        if rc == 0:
+            print("downlink queued for %s (class A: sent at its next uplink)" % dev)
+        else:
+            sys.exit("downlink refused (code %s): bad id/port/payload, no "
+                     "session, or queue full" % rc)
+    elif op == "usb" and len(rest) == 2 and rest[1] in ("on", "off"):
+        d = _request(host, "/lns/api?action=usb&v=" + rest[1], auth=args.auth)
+        print("USB stream: %s" % ("on" if d.get("usb") else "off"))
+    else:
+        sys.exit("usage: awaro lns <host> [adr on|off] [adr <device> <sf7-11>]\n"
+                 "                        [test <decoder> <hexpayload>]\n"
+                 "                        [downlink <device> <hexpayload> "
+                 "[--fport N] [--confirmed]]\n"
+                 "                        [usb on|off]")
 
 
 # ------------------------------------------------------ backup/restore ----
@@ -339,6 +437,17 @@ def main():
                    help="install this version ('latest' = newest published)")
     p.add_argument("--unblock", action="store_true",
                    help="release the anti-brick lock first")
+    p = sub.add_parser("lns", parents=[net_parent],
+                       help="embedded LoRaWAN server: overview, ADR, codec "
+                            "test, downlink, USB stream")
+    p.add_argument("host")
+    p.add_argument("args", nargs="*",
+                   help="adr on|off · adr <device> <sf> · test <decoder> <hex>"
+                        " · downlink <device> <hex> · usb on|off")
+    p.add_argument("--fport", type=int, default=2,
+                   help="FPort for test/downlink (default 2)")
+    p.add_argument("--confirmed", action="store_true",
+                   help="confirmed downlink")
     p = sub.add_parser("log", help="live decoded frames from the USB port")
     p.add_argument("--port", required=True)
     p.add_argument("--baud", type=int, default=115200)
@@ -347,7 +456,8 @@ def main():
     sub.add_parser("bridge", help="USB -> MQTT + HA discovery (see --help)")
     args = ap.parse_args(argv)
     dispatch = {"find": cmd_find, "status": cmd_status, "backup": cmd_backup,
-                "restore": cmd_restore, "update": cmd_update, "log": cmd_log}
+                "restore": cmd_restore, "update": cmd_update, "lns": cmd_lns,
+                "log": cmd_log}
     if args.cmd in dispatch:
         return dispatch[args.cmd](args)
     ap.print_help()

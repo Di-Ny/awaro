@@ -8,6 +8,6 @@ turns the gateway into a USB dongle for MQTT / Home Assistant (implementation
 in the open-source lorawan2mqtt project, installed as a dependency).
 """
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 from .cli import main  # noqa: F401  (console-script entry point)
