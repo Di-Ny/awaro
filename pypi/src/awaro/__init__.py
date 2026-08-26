@@ -1,7 +1,14 @@
-"""Name reserved for the Awaro LoRaWAN gateway — https://awaro.fr.
+"""Companion command for the Awaro LoRaWAN gateway — https://awaro.fr.
 
-No Python code lives here; the open-source software is the lorawan2mqtt
-project: https://github.com/lorawan2mqtt/lorawan2mqtt.
+`awaro --port <serial> --mqtt-host <broker>` plugs an Awaro gateway into
+MQTT / Home Assistant over USB ("dongle" mode). The implementation lives in
+the open-source lorawan2mqtt project, installed as a dependency:
+https://github.com/lorawan2mqtt/lorawan2mqtt.
 """
 
-__version__ = "0.0.1"
+__version__ = "0.0.2"
+
+
+def main():
+    from lorawan2mqtt.usb_bridge import main as bridge_main
+    bridge_main()

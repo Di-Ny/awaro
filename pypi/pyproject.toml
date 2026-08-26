@@ -1,22 +1,31 @@
-# Defensive placeholder: locks the "awaro" name on PyPI (brand protection).
-# This package intentionally ships nothing — the Awaro gateway is a hardware
-# product, see https://awaro.fr.
+# Companion package of the Awaro LoRaWAN gateway: `pip install awaro` brings
+# in the lorawan2mqtt USB bridge and exposes it as the `awaro` command
+# ("dongle" mode: gateway on USB -> MQTT + Home Assistant discovery).
 [build-system]
 requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "awaro"
-version = "0.0.1"
-description = "Name reserved for the Awaro LoRaWAN gateway (awaro.fr). See the lorawan2mqtt project for the software."
+version = "0.0.2"
+description = "Companion command for the Awaro LoRaWAN gateway (awaro.fr): USB gateway to MQTT / Home Assistant, via lorawan2mqtt."
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.9"
 maintainers = [{ name = "Awaro" }]
+keywords = ["lorawan", "awaro", "gateway", "mqtt", "home-assistant"]
 classifiers = [
-    "Development Status :: 1 - Planning",
+    "Development Status :: 3 - Alpha",
     "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Home Automation",
 ]
+dependencies = [
+    "lorawan2mqtt>=0.0.2",
+]
+
+[project.scripts]
+awaro = "awaro:main"
 
 [project.urls]
 Homepage = "https://awaro.fr"
