@@ -17,6 +17,7 @@ or ThingsBoard — no external server, no cloud required.
 | [`docs/`](docs/) | User documentation | CC BY-NC-SA 4.0 |
 | [`examples/`](examples/) | Integration examples: MQTT / webhook payloads, Home Assistant, Node-RED | MIT |
 | [`CHANGELOG.md`](CHANGELOG.md) | Firmware release notes | — |
+| [`ROADMAP.md`](ROADMAP.md) | Upcoming features being worked on (Matter, persistent packet log…) | — |
 
 The gateway **firmware is proprietary** and not part of this repository.
 Payload decoders are shared through the open
