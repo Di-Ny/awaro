@@ -3,9 +3,44 @@
 Gateway firmware — user-facing changes. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 The firmware itself is proprietary; this file documents what each update brings.
 
+## [3.5.3]
+
+- Simpler Matter pairing: the gateway now draws its QR code right in its web page (Pairing button) - no more copying the code by hand.
+- Each gateway now has its own pairing identifier and its own name, so several of them can live on the same network and be told apart in the app (Apple Home, Google Home...).
+- The short address (awaro-XXXXXX.local) also answers from the very first power-up, while the box is still its own WiFi access point.
+- On protected models, the sensor registry is encrypted like the rest of the memory.
+- The configuration page opens noticeably faster (it is now compressed: about four times less data to download), and the gateway reboots in seconds instead of about thirty when supervision has not been configured yet.
+- Finally, in home-automation apps the gateway now shows its real name (Awaro LT or Awaro Pro, by Furgo) instead of a generic one.
+
+## [3.5.2]
+
+- The gateway’s identity card on the supervisor (firmware version, IP address, WiFi network…) now refreshes regularly instead of only at connection time: after an update or a network change, the dashboard immediately reflects reality.
+
+## [3.5.1]
+
+- Memory overhaul, part two: another ~18 KB of internal memory freed on every model (concentrator verification buffer released after start-up, unused transmit queue removed), leaving more headroom for integrations and updates.
+
+## [3.5.0]
+
+- Major internal memory overhaul: the gateway keeps much more free memory while running, even with several integrations active at once — no more slowdowns or refused connections when everything is enabled.
+- Two integrations pointing at the same MQTT server now share a single connection instead of opening two.
+- Groundwork for the Matter bridge on compatible models: LoRaWAN sensors will be able to appear directly in Apple Home, Home Assistant or Google Home (activation to come).
+
+## [3.4.4]
+
+- The built-in server now adjusts sensor radio data rates on its own (ADR): a sensor stuck at a slow rate — for instance after a gateway power outage — is automatically brought back to its optimal rate within minutes, no action needed.
+- The built-in server page now displays reliably even after days of uptime (blank-window issue fixed).
+- Every click now gives visual feedback: a "Saved" confirmation and a busy animation on buttons (update check, WiFi scan, network tests).
+
+## [3.4.1]
+
+- More sensors recognised: the Dragino range grows (PS-LB pressure probe, plus the SN50v3 measurement modes that were still missing).
+- Readings from these sensors now arrive decoded, with their units, with nothing to configure.
+
 ## [3.4.0]
 
-- Milesight sensors recognised automatically: the whole range (AM air-quality, EM300 and EM500 series, door, leak, smart socket, radiator valve…) is decoded with no configuration at all — just pick "Milesight" as the sensor's decoder.
+- Many more sensors recognised: 36 built-in decoders covering Milesight (the whole range), Elsys, Seeed SenseCAP — including the 8-in-1 weather station —, Browan/Tabs, the MClimate Vicki radiator valve and some forty Dragino references (door, leak, distance, soil, pH, LiDAR, radar, tilt, pressure, I/O controller).
+- Just pick the model from the sensor's list, with no configuration at all; the list is now grouped by brand.
 - More reliable integrations: messages sent to integrations can no longer be truncated, every reading of a sensor now shows up in Home Assistant (some could remain invisible), and the packet log displays and exports all decoded values.
 - Hardened security: the published software no longer contains any credential — the supervision key and the update password are per-gateway (installed at the workshop), and the update channel now supports per-device authentication (HTTP Digest, the password never travels in clear text).
 
