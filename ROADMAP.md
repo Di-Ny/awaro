@@ -34,12 +34,20 @@ fine for a site you can walk into, but not for a gateway on a 4G link or behind
 a network you don't control, where the sensor fleet still has to grow.
 
 We are working on configuring the built-in server remotely: adding, renaming
-and removing sensors without being on site. This one will be **limited to Pro
-gateways** and will most likely require a **subscription**, because it relies
-on a hosted service we have to run and keep secure. Gateways will keep working
-exactly as they do today without it — and forwarding to an external network
-server (TTN, ChirpStack…), which already allows remote sensor provisioning,
-stays available on every model, free of charge.
+and removing sensors without being on site — the gateway's own configuration
+page, opened from wherever you are, rather than a stripped-down remote API.
+
+It is designed as **access on demand, not a permanent door**: you open a
+session for the time it takes to do the job, you configure, the session closes
+by itself. It also supposes a gateway connected to a supervision service, which
+is what authorises the operator and hands out the session.
+
+We intend to offer it on **Pro gateways**, most likely as part of a
+**subscription** — a commercial choice on our side, tied to a hosted service we
+have to run and keep secure. Gateways keep working exactly as they do today
+without it, and forwarding to an external network server (TTN, ChirpStack…),
+which already allows remote sensor provisioning, stays available on every
+model, free of charge.
 
 ### Native Matter support
 

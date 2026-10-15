@@ -3,6 +3,83 @@
 Gateway firmware — user-facing changes. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 The firmware itself is proprietary; this file documents what each update brings.
 
+## [3.6.3]
+
+- Wi-Fi: a box already in service no longer falls back to access-point mode on its own when its network disappears; it keeps retrying and reconnects as soon as the network is back (the automatic access point is now only for installation, or after a short press on the button).
+- New backup Wi-Fi, for example a 4G dongle, used only when the main network has had no connection or no Internet for 3 minutes, with automatic return to the main one; the box picks the strongest access point and its integrations reconnect as soon as the network is back.
+- Remote access: a network drop during a session no longer reboots the box.
+- Built-in LoRaWAN server: data-rate adaptation no longer slows a sensor down for a single badly received frame and never asks for a data rate the radio plan forbids (on AU915, sensors sent to SF11 stayed silent until restarted).
+- FurgoNode: the GSM RSSI is published as gsm_rssi and no longer overwrites the radio RSSI.
+- Decoders: u24l type (3 swapped bytes) in the builder; a decoder too long for the page is refused with a message instead of being cut; importing a configuration counts the decoders it adds.
+
+## [3.6.2]
+
+- Built-in LoRaWAN server page: an integration address keeps the prefix you type (wss://, mqtts://, https://...).
+- The mqtt:// or http:// shown in front of the Server field is now only a hint, which disappears as soon as a prefix is typed, and the edit button keeps the full address: a wss:// integration no longer falls back to mqtt:// (port 1883) when saved.
+- A prefix typed with a capital letter (phone keyboard) is accepted.
+- The FurgoSuperviseur help mentions wss:// for networks that block port 1883.
+
+## [3.6.1]
+
+- Wi-Fi: from the box access point, a dedicated button now tests the connection to an enterprise network (802.1X: PEAP, EAP-TTLS) before saving, and every failure is explained in plain words: network not found or not on 2.4 GHz, enterprise box to tick or untick, password rejected, credentials rejected by the authentication server, access point refusing the device or no IP address assigned (with the MAC address to give to the IT department).
+- A network name or password with accents is no longer truncated when saved, and the anonymous identity or the certificate of an enterprise network are removed by emptying the field.
+- An open Wi-Fi network (no password) is now saved by emptying the password field: the previous password used to be kept and the box then refused that network, although the test button succeeded.
+- ThingsBoard: the box no longer knows any default server; the server address is entered together with the access token (Integrations page or workshop) and survives a factory reset, an existing link is left unchanged; remote debug mode stays inactive until its server is provided.
+- Every reading sent to ThingsBoard carries the number of messages received from the sensor and the counter of replies sent to it.
+- Built-in server: a network command frame (port 0) is never decoded as a reading anymore (false values, e.g. a battery at 7 %).
+
+## [3.6.0]
+
+- Radio regions: the configuration page offers the AU915 plan (Australia, Argentina, South America) next to EU868 / US915 / CN470, with a sub-band selector (block of 8 channels) that sets both radios by itself and shows the sensor numbering (1 to 8) alongside the ChirpStack one (0 to 7).
+- The built-in LoRaWAN server now follows the selected plan: on US915 / AU915 the reply windows, the join answer (list of channels to use) and the data-rate steering stay on the channels the box listens to, so an AU915 sensor also works without an external server.
+- Nothing changes on EU868.
+
+## [3.5.10]
+
+- Stability: Awaro Pro V3 and LT no longer reboot when the USB device they are plugged into goes to sleep (sleeping PC, power-saving hub): the USB console was spinning and tripped the watchdog.
+- ThingsBoard: everything the box sends now goes through its supervision integration, which reconnects on its own even without sensors; a box provisioned the old way is converted automatically at first boot.
+- A factory reset or a wipe of the settings storage keeps the ThingsBoard link and the remote access key.
+- Statistics and box health are sent every 5 minutes by default, instead of every 30 seconds when the Stats setting was empty.
+- Sensors: the Seeed SenseCAP S2120 weather station is now decoded like the vendor ChirpStack codec: pressure in Pa, measurement interval published, and a frame from another SenseCAP product no longer hides the reading that follows it.
+
+## [3.5.9]
+
+- ThingsBoard: the box information (installed version, addresses, network name, sensor count, free memory, last reboot cause) is kept up to date on the dashboard after an update again, including when the ThingsBoard integration shares the box connection: it stayed frozen on the previous version.
+- The LoRaWAN server mode (built-in or relay) is reported on every path.
+
+## [3.5.8]
+
+- Hautense sensor (electric fence energizer): the batch of timestamped measurements the device sends after each status frame (firmware 1.4) is now decoded and forwarded to ThingsBoard in the same shape as the GSM version, with a summary (number of measurements, min/max voltage and energy) in the log and the integrations.
+- The box keeps a copy of its configuration (WiFi, access, ThingsBoard token) and restores it automatically if its settings storage has to be reset during an update: no more box to reconfigure after an automatic update.
+- The reason of the last reboot is reported to ThingsBoard (attribute and history) and shown in the box status.
+- Configuration page: the Access point / Station choice is applied again on reboot.
+
+## [3.5.7]
+
+- Built-in LoRaWAN server: a command (downlink) sent by your automation within the second following a sensor message now leaves right away, in that message's receive window, instead of waiting for the next message.
+- It is sent confirmed and automatically resent at the next message if the sensor did not acknowledge it.
+- The downlink counter now survives a reboot of the box: a sensor no longer becomes deaf to commands after a restart.
+- The recent packets list shows acknowledgements in both directions.
+- The Stats (NS and integrations) setting now sets a single cadence for everything the box sends (statistics, ThingsBoard, integrations, data counters), 5 minutes by default.
+- New Internet data-usage counters per purpose.
+- Radio range: the reply to the join request of a distant sensor is sent on the fallback window at full power, the transmit power depends on the board, and data-rate adaptation now works both ways.
+- Log of the last 200 frames on boards with PSRAM.
+- ThingsBoard: device profile per sensor model.
+- The Pass field of a webhook accepts a full HTTP header.
+- Remote access: a weak radio link no longer cuts the page being viewed.
+- Awaro LT: dimmer status LEDs.
+
+## [3.5.6]
+
+- Built-in LoRaWAN server page: the Test button on an integration now shows that it is working and waits for the real answer, instead of refreshing after two seconds and often showing the previous state.
+- When a ThingsBoard or MQTT integration is rejected, the page now gives the real reason (token refused) instead of suggesting the server is unreachable.
+- Also fixes connecting to secure MQTT servers (mqtts:// and wss://), which failed because their certificate was not recognised.
+
+## [3.5.4]
+
+- Important fix for enterprise WiFi networks: from the configuration page it had become impossible to TURN OFF WPA2-Enterprise mode (the box kept using it even with the checkbox cleared, and eventually fell back to access-point mode).
+- The setting can be changed again.
+
 ## [3.5.3]
 
 - Simpler Matter pairing: the gateway now draws its QR code right in its web page (Pairing button) - no more copying the code by hand.
