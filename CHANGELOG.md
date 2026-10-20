@@ -3,6 +3,12 @@
 Gateway firmware — user-facing changes. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 The firmware itself is proprietary; this file documents what each update brings.
 
+## [3.6.4]
+
+- V1 gateway: it now gets the 3.6 series too, with everything released since its 3.4.4: backup Wi-Fi and reconnection without falling back to access-point mode, strongest access point chosen, accented characters accepted in the network name and password, and a test button that explains why a connection fails (network not found or on 5 GHz, password refused, enterprise Wi-Fi).
+- Custom decoders, all models: an offset added after the division (+ or -, for example -100), signed 24-bit types (i24, i24l), tables more than three times longer (511 characters instead of 159) for sensors with many readings such as the Ecomatik IoP-MI8-L, and a number of decimals that follows the resolution (a reading divided by 2 keeps its half); tables already saved are kept as they are.
+- Updates: a box living on its backup Wi-Fi no longer blocks a version after three failed attempts on a main network without Internet; it waits until it is on a network that reaches the update server, then installs without a second reboot.
+
 ## [3.6.3]
 
 - Wi-Fi: a box already in service no longer falls back to access-point mode on its own when its network disappears; it keeps retrying and reconnects as soon as the network is back (the automatic access point is now only for installation, or after a short press on the button).
