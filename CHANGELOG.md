@@ -3,6 +3,18 @@
 Gateway firmware — user-facing changes. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 The firmware itself is proprietary; this file documents what each update brings.
 
+## [3.6.5]
+
+- LoRaWAN server page: every action now answers.
+- Adding a sensor opens the sensor list on the new row, highlighted for a moment, with a message (added, or updated when the DevEUI was already declared, or refused when the table is full); the identity fields are cleared while the group, decoder and class stay for the next sensor.
+- Clicking a sensor in the list brings it back into the form, keys included, to fix a typo (Update button).
+- Queuing a downlink finally shows its verdict: queued for the next uplink (or sent right away in class C), sensor shown with its DL pending badge; refusals (sensor without a session, payload too long) are explained.
+- Same feedback for integrations (added, updated, no room left, refused), decoders and deletions; an unreachable box says so instead of doing nothing.
+- Buttons acknowledge the click, show the wait, then the result.
+- Integrations: FurgoSuperviseur and ThingsBoard are offered side by side (same mechanism, Furgo server pre-filled for the first, any ThingsBoard server for the second; existing integrations are kept); only the fields relevant to the chosen type stay visible (no more greyed Topic or Pass on ThingsBoard; the token is called Access token and is required); editing an integration shows Update as long as the type and server still designate it; the description and sample message, like the downlink REST command, fold behind a ?
+- button.
+- Configuration page: the backup Wi-Fi moves to the advanced settings; the Test this network button, when the box is already connected, checks that the requested network is visible (exact name, 2.4 GHz, signal) without dropping the connection, the password remaining to be tested from access-point mode; the main and backup Wi-Fi labels explain the retry strategy on hover; in remote access the Wi-Fi password no longer leaves the box (neither in the page nor in a backup with secrets): the field stays empty, and empty on save means kept as long as the network does not change.
+
 ## [3.6.4]
 
 - V1 gateway: it now gets the 3.6 series too, with everything released since its 3.4.4: backup Wi-Fi and reconnection without falling back to access-point mode, strongest access point chosen, accented characters accepted in the network name and password, and a test button that explains why a connection fails (network not found or on 5 GHz, password refused, enterprise Wi-Fi).
