@@ -49,10 +49,19 @@ Dans la carte **Serveur réseau**, cliquez sur **Serveur LoRaWAN intégré**
 *Le serveur intégré est actif et le serveur externe éteint : la ligne grise
 le confirme, aucune donnée ne part vers un serveur externe.*
 
-> [!TIP]
-> Vous relayez aussi d'autres capteurs vers TTN ou ChirpStack ? Laissez
-> **Serveur externe** allumé en plus. Les capteurs déclarés dans la box sont
-> traités par la box, les autres continuent vers le serveur externe.
+Les deux boutons donnent trois fonctionnements possibles :
+
+| Boutons allumés | Ce que fait la box | Pour qui |
+|---|---|---|
+| **Serveur intégré** seul | Elle gère et décode tous les capteurs ; rien ne part vers un serveur externe. | Ce tuto. Idéal en 4G : économie de données. |
+| **Serveur externe** seul | Elle relaie toutes les trames vers TTN, ChirpStack… sans rien décoder. | Vous avez déjà votre serveur LoRaWAN. |
+| **Les deux** | Les capteurs déclarés dans la box sont traités par la box ; les autres partent vers le serveur externe. | Migration en douceur, ou parc partagé entre deux serveurs. |
+
+> [!WARNING]
+> **Attention à la concurrence !** Un capteur ne se déclare qu'à **un seul**
+> endroit : dans la box **ou** sur le serveur externe. Déclaré des deux côtés,
+> il reçoit des réponses des deux serveurs, avec des clés de session
+> différentes : l'un des deux ne comprend plus ses trames.
 
 Cliquez ensuite sur **Gérer — capteurs & intégrations →** : vous arrivez sur
 la page du serveur LoRaWAN (`/lns`). Tout le reste se passe ici.
@@ -79,8 +88,8 @@ Laissez **Classe C** décochée, sauf pour un actionneur alimenté sur secteur.
 
 > [!WARNING]
 > **Le piège : le capteur déclaré deux fois.** Si ce capteur était déjà
-> enregistré sur TTN ou ChirpStack, supprimez-le là-bas. Un capteur ne doit
-> être déclaré que sur un seul serveur.
+> enregistré sur TTN ou ChirpStack, supprimez-le là-bas avant de le réveiller
+> (voir l'encadré de l'étape 1).
 
 ## Étape 3 : réveiller le capteur
 
