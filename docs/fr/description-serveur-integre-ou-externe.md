@@ -93,6 +93,7 @@ en trois tableaux.
 | Serveur externe seul, ou les deux | Signal de vie toutes les 25 s et statistiques toutes les 5 min (réglages par défaut actuels). | ~9 Mo |
 | *Pour comparaison :* même chose aux cadences d'origine | Signal de vie toutes les 10 s, statistiques toutes les 30 s. | ~35 Mo |
 | Serveur intégré + supervision (FurgoSuperviseur ou votre ThingsBoard) | Connexion MQTT entretenue, état de la box toutes les 5 min, lecture de sa configuration. | ~14 Mo, quel que soit le nombre de capteurs |
+| Même chose, **Stats à 3600 s** (réglage conseillé en 4G) | Connexion MQTT entretenue, état de la box toutes les heures, lecture de sa configuration. | ~10 Mo, quel que soit le nombre de capteurs |
 | Serveur intégré seul, intégrations sur votre réseau local | L'heure et la vérification des mises à jour. | ~0,3 Mo |
 
 ### Le coût par capteur
@@ -127,11 +128,13 @@ Le verdict de l'enquête :
 > [!WARNING]
 > **Le piège : tout envoyer dans le cloud.** Par trame, l'envoi chiffré d'une
 > mesure vers ThingsBoard (~560 octets) pèse plus lourd que son relais vers
-> TTN ou ChirpStack (~360 octets), et la liaison ThingsBoard (~14 Mo par
-> mois) plus lourd que le coût fixe du relais (~9 Mo). Si chaque mesure part
-> de toute façon vers ThingsBoard sur Internet, le serveur intégré ne vous
-> fait donc pas gagner de données : le relais reste plus léger. L'économie du
-> serveur intégré vient d'ailleurs : les trames restent chez vous, seule la
+> TTN ou ChirpStack (~360 octets), et la liaison ThingsBoard (~10 Mo par mois
+> avec Stats à 3600 s) un peu plus que le coût fixe du relais (~8 Mo). Si
+> chaque mesure part vers ThingsBoard, le serveur intégré ne fait donc pas
+> gagner de données face à un relais **seul**. Mais un relais seul n'apporte
+> ni la supervision de la box ni le rattrapage des coupures : si vous voulez
+> aussi superviser la box, le relais paie les deux liaisons. Et l'économie la
+> plus nette reste quand les trames restent chez vous et que seule la
 > synthèse sort.
 
 > [!IMPORTANT]
@@ -140,8 +143,8 @@ Le verdict de l'enquête :
 > intégrations)** règle tout ce que la box émet d'elle-même : rapport au
 > serveur externe, état de la box vers ThingsBoard et Home Assistant,
 > compteurs de consommation. De 30 à 3600 s, vide = 300 s, pris en compte au
-> redémarrage. C'est lui qui pèse sur un forfait 4G : ne le raccourcissez pas
-> sans raison.
+> redémarrage. C'est lui qui pèse sur un forfait 4G : **en 4G, passez-le à
+> 3600 s** (un rapport par heure) ; ne le raccourcissez jamais sans raison.
 
 Pour vérifier sur votre propre box, regardez la ligne **Données consommées**
 de la même rubrique. Elle affiche ce que la box a échangé depuis son
@@ -315,7 +318,7 @@ les modèles sans supplément, permet déjà de déclarer des capteurs à distan
 | **Le contexte** | Une box sur un routeur 4G, 5 capteurs (chambre froide, cuve, sondes de sol) et un tableau de bord en ligne. L'exploitant est sur place tous les jours ; la 4G décroche de temps en temps. |
 | **L'enquête** | Ajouter un capteur sur place ? Aucun souci, l'exploitant y est. Les coupures 4G ? Le serveur intégré garde les trames et les rattrape. Le forfait ? Le tableau de bord est en ligne, donc chaque mesure sort de toute façon : relais et serveur intégré restent modestes tous les deux, et vers ThingsBoard le relais est même plus léger (voir « Le piège : tout envoyer dans le cloud »). |
 | **Le verdict** | **Serveur intégré seul**, avec une intégration vers le tableau de bord (FurgoSuperviseur, ThingsBoard ou un broker MQTT). Ici, on le choisit pour le rattrapage et l'absence de serveur à gérer, pas pour le forfait. |
-| **Les bons réglages** | Historique à `100` sur chaque capteur. **Stats** laissé vide (300 s). Pour piloter une électrovanne depuis le bureau : le topic `lns/<DevEUI>/dl` d'une intégration MQTT, ou la RPC `downlink` sous ThingsBoard. |
+| **Les bons réglages** | Historique à `100` sur chaque capteur. **Stats** à 3600 s. Le pas à pas complet est dans le tuto [Installer la box sur un site sans Internet, avec un routeur 4G](tuto-site-isole-en-4g.md). Pour piloter une électrovanne depuis le bureau : le topic `lns/<DevEUI>/dl` d'une intégration MQTT, ou la RPC `downlink` sous ThingsBoard. |
 
 ### L'intégrateur qui a déjà son ChirpStack
 

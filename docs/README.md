@@ -17,6 +17,7 @@ du nom de fichier :
 |---|---|
 | [Recevoir les mesures d'un capteur Dragino sur votre broker MQTT](fr/tuto-dragino-vers-broker-mqtt.md) | Un Dragino déclaré sur le serveur intégré de la box, ses mesures décodées publiées sur votre broker MQTT. |
 | [Récupérer les mesures de vos capteurs sur TTN](fr/tuto-recuperer-mes-donnees-sur-ttn.md) | La box déclarée comme passerelle TTN, un Dragino LHT52 enregistré sur TTN, ses mesures lues sur le serveur MQTT de TTN. |
+| [Installer la box sur un site sans Internet, avec un routeur 4G](fr/tuto-site-isole-en-4g.md) | Une box en 4G avec 5 capteurs, ses mesures sur FurgoSuperviseur ou ThingsBoard, et environ 16 Mo de données par mois. |
 
 ## Descriptions
 
