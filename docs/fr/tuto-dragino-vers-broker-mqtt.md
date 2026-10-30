@@ -65,7 +65,7 @@ Les deux boutons donnent trois fonctionnements possibles :
 
 | Boutons allumés | Ce que fait la box | Pour qui |
 |---|---|---|
-| **Serveur intégré** seul | Elle gère et décode tous les capteurs ; rien ne part vers un serveur externe. | Ce tuto. Idéal en 4G : économie de données. |
+| **Serveur intégré** seul | Elle gère et décode tous les capteurs ; rien ne part vers un serveur externe. | Ce tuto. Idéal en 4G : aucun trafic vers un serveur externe (détail dans la [description](description-serveur-integre-ou-externe.md#combien-de-données-sur-votre-forfait-)). |
 | **Serveur externe** seul | Elle relaie toutes les trames vers TTN, ChirpStack… sans rien décoder. | Vous avez déjà votre serveur LoRaWAN. |
 | **Les deux** | Les capteurs déclarés dans la box sont traités par la box ; les autres partent vers le serveur externe. | Migration en douceur, ou parc partagé entre deux serveurs. |
 
