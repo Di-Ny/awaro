@@ -16,6 +16,7 @@ du nom de fichier :
 | Tuto | Ce que vous obtenez à la fin |
 |---|---|
 | [Recevoir les mesures d'un capteur Dragino sur votre broker MQTT](fr/tuto-dragino-vers-broker-mqtt.md) | Un Dragino déclaré sur le serveur intégré de la box, ses mesures décodées publiées sur votre broker MQTT. |
+| [Récupérer les mesures de vos capteurs sur TTN](fr/tuto-recuperer-mes-donnees-sur-ttn.md) | La box déclarée comme passerelle TTN, un Dragino LHT52 enregistré sur TTN, ses mesures lues sur le serveur MQTT de TTN. |
 
 ## Descriptions
 
